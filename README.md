@@ -21,10 +21,11 @@ Currently, this repository showcases the completed **Authentication Service (`au
 
 ## 🚀 How to Run the Auth Service
 1. Clone this repository.
-2. Rename `.env.example` to `.env` and fill in your MySQL and SMTP credentials.
-3. Run `docker-compose up -d` to spin up the database.
-4. Launch the application (e.g., via Maven: `./mvnw spring-boot:run` inside the `auth-service` folder).
-5. Visit `http://localhost:8084/swagger-ui/index.html` to interact with the APIs.
+2. **VS Code Helper Extension**: This repository includes a custom helper extension (`giuliano-java-helper-2.0.2.vsix`) located in `.devcontainer/extensions`. If you use VS Code, you can install it manually by going to the Extensions view (Ctrl+Shift+X), clicking the three dots (`...`) at the top right, selecting **Install from VSIX...**, and choosing the file. It will add a handy big button to run the services!
+3. Rename `.env.example` to `.env` and fill in your MySQL and SMTP credentials.
+4. Run `docker-compose up -d` to spin up the database.
+5. Launch the application (e.g., via the new VS Code big button, or via Maven: `./mvnw spring-boot:run` inside the `auth-service` folder).
+6. Visit `http://localhost:8084/swagger-ui/index.html` to interact with the APIs.
 
 ## 🚧 What's Next?
 The next module in development is the **Ad Campaign Service**, which will handle the core business logic (budgets, creatives, and ad-serving algorithms). Stay tuned for updates!

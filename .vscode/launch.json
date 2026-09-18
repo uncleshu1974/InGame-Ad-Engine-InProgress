@@ -1,0 +1,36 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "java",
+            "name": "Launch Auth-Service",
+            "request": "launch",
+            "cwd": "${workspaceFolder}",
+            "mainClass": "com.kingroly.authservice.AuthServiceApplication",
+            "projectName": "auth-service",
+            "envFile": "${workspaceFolder}/.env"
+        },
+        {
+            "type": "java",
+            "name": "Launch Ad-Campaign-Service",
+            "request": "launch",
+            "mainClass": "com.kingroly.campaignservice.AdCampaignServiceApplication"
+        },
+        {
+            "type": "java",
+            "name": "Spring Boot-AdCampaignServiceApplication<ad-campaign-service>",
+            "request": "launch",
+            "cwd": "${workspaceFolder}",
+            "mainClass": "com.kingroly.campaignservice.AdCampaignServiceApplication",
+            "projectName": "ad-campaign-service",
+            "args": "",
+            "envFile": "${workspaceFolder}/.env"
+        }
+    ],
+    "compounds": [
+        {
+            "name": "Launch All Microservices",
+            "configurations": ["Launch Auth-Service", "Launch Ad-Campaign-Service"]
+        }
+    ]
+}

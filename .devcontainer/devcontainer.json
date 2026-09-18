@@ -1,0 +1,32 @@
+{
+    "name": "Java Spring Boot DevContainer - Ad Engine",
+    "build": {
+        "dockerfile": "Dockerfile"
+    },
+    "runArgs": [
+        "--cap-add=SYS_PTRACE",
+        "--security-opt",
+        "seccomp=unconfined",
+        "--network=ingame-ad-engine_default"
+    ],
+    "customizations": {
+        "vscode": {
+            "settings": {
+                "java.home": "/usr/lib/jvm/msopenjdk-current",
+                "spring-boot.ls.java.home": "/usr/lib/jvm/msopenjdk-current",
+                "java.referencesCodeLens.enabled": true,
+                "java.implementationsCodeLens.enabled": true,
+                "editor.codeLens": true,
+                "remote.autoForwardPorts": true
+            },
+            "extensions": [
+                "vscjava.vscode-java-pack",
+                "vscjava.vscode-spring-boot-dashboard",
+                "vmware.vscode-spring-boot"
+            ]
+        }
+    },
+    "forwardPorts": [9000, 8083, 8084, 3306, 3307],
+    "postAttachCommand": "code --install-extension .devcontainer/extensions/giuliano-java-helper-2.0.2.vsix --force",
+    "remoteUser": "vscode"
+}

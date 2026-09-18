@@ -1,0 +1,36 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "🧹 Pulisci Cache (Maven Clean)",
+            "type": "shell",
+            "command": "./mvnw clean",
+            "options": {
+                "cwd": "${workspaceFolder}/auth-service"
+            },
+            "problemMatcher": [],
+            "presentation": {
+                "reveal": "always",
+                "panel": "new"
+            },
+            "group": "build"
+        },
+        {
+            "label": "🚀 Pulisci e Compila (Maven Clean Install)",
+            "type": "shell",
+            "command": "./mvnw clean install -DskipTests",
+            "options": {
+                "cwd": "${workspaceFolder}/auth-service"
+            },
+            "problemMatcher": [],
+            "presentation": {
+                "reveal": "always",
+                "panel": "new"
+            },
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
+        }
+    ]
+}
