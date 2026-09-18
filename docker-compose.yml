@@ -1,0 +1,47 @@
+version: '3.8'
+
+services:
+  # Database per l'Auth-Service (Gestione Inserzionisti)
+  auth-db:
+    image: mysql:8.0
+    container_name: ad_engine_auth_db
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: auth_db
+      MYSQL_USER: auth_user
+      MYSQL_PASSWORD: auth_password
+    ports:
+      - "3308:3306"
+    volumes:
+      - auth-db-data:/var/lib/mysql
+    restart: unless-stopped
+
+  # Database per l'Ad-Campaign Service (Gestione Ordini Pubblicitari, Calendari e Giochi)
+  campaign-db:
+    image: mysql:8.0
+    container_name: ad_engine_campaign_db
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: campaign_db
+      MYSQL_USER: campaign_user
+      MYSQL_PASSWORD: campaign_password
+    ports:
+      - "3307:3306" # Mappato sulla 3307 sul PC host per evitare conflitti
+    volumes:
+      - campaign-db-data:/var/lib/mysql
+    restart: unless-stopped
+
+  # Interfaccia grafica per gestire i database (Accessibile su localhost:8082)
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    container_name: ad_engine_phpmyadmin
+    environment:
+      PMA_ARBITRARY: 1 # Permette di connettersi a più database
+      PMA_HOSTS: auth-db, campaign-db
+    ports:
+      - "8082:80"
+    restart: unless-stopped
+
+volumes:
+  auth-db-data:
+  campaign-db-data:
