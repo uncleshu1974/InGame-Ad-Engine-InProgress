@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Component;
 import java.security.Key;
+import javax.crypto.SecretKey;
 import java.util.Date;
 
 /**
@@ -20,7 +21,7 @@ public class JwtUtils {
     @Value("${jwt.expirationMs:86400000}")
     private int jwtExpirationMs; // 24 ore
 
-    private Key key() {
+    private SecretKey key() {
         return Keys.hmacShaKeyFor(jwtSecret.getBytes());
     }
 
@@ -30,10 +31,10 @@ public class JwtUtils {
     public String generateJwtToken(Authentication authentication) {
         String email = authentication.getName(); 
         return Jwts.builder()
-                .setSubject(email)
-                .setIssuedAt(new Date())
-                .setExpiration(new Date((new Date()).getTime() + jwtExpirationMs))
-                .signWith(key(), SignatureAlgorithm.HS256)
+                .subject(email)
+                .issuedAt(new Date())
+                .expiration(new Date((new Date()).getTime() + jwtExpirationMs))
+                .signWith(key())
                 .compact();
     }
 
@@ -41,8 +42,8 @@ public class JwtUtils {
      * Estrae l'email (Subject) dal JWT.
      */
     public String getUserEmailFromJwtToken(String token) {
-        return Jwts.parserBuilder().setSigningKey(key()).build()
-                .parseClaimsJws(token).getBody().getSubject();
+        return Jwts.parser().verifyWith(key()).build()
+                .parseSignedClaims(token).getPayload().getSubject();
     }
 
     /**
@@ -50,7 +51,7 @@ public class JwtUtils {
      */
     public boolean validateJwtToken(String authToken) {
         try {
-            Jwts.parserBuilder().setSigningKey(key()).build().parseClaimsJws(authToken);
+            Jwts.parser().verifyWith(key()).build().parseSignedClaims(authToken);
             return true;
         } catch (JwtException | IllegalArgumentException e) {
             System.err.println("Token JWT Non Valido: " + e.getMessage());

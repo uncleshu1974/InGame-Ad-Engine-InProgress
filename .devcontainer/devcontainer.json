@@ -9,6 +9,9 @@
         "seccomp=unconfined",
         "--network=ingame-ad-engine_default"
     ],
+    "mounts": [
+        "source=/var/run/docker.sock,target=/var/run/docker.sock,type=bind"
+    ],
     "customizations": {
         "vscode": {
             "settings": {

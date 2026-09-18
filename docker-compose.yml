@@ -6,10 +6,10 @@ services:
     image: mysql:8.0
     container_name: ad_engine_auth_db
     environment:
-      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_ROOT_PASSWORD: ${AUTH_DB_ROOT_PASSWORD}
       MYSQL_DATABASE: auth_db
-      MYSQL_USER: auth_user
-      MYSQL_PASSWORD: auth_password
+      MYSQL_USER: ${AUTH_DB_USER}
+      MYSQL_PASSWORD: ${AUTH_DB_PASSWORD}
     ports:
       - "3308:3306"
     volumes:
@@ -21,10 +21,10 @@ services:
     image: mysql:8.0
     container_name: ad_engine_campaign_db
     environment:
-      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_ROOT_PASSWORD: ${CAMPAIGN_DB_ROOT_PASSWORD}
       MYSQL_DATABASE: campaign_db
-      MYSQL_USER: campaign_user
-      MYSQL_PASSWORD: campaign_password
+      MYSQL_USER: ${CAMPAIGN_DB_USER}
+      MYSQL_PASSWORD: ${CAMPAIGN_DB_PASSWORD}
     ports:
       - "3307:3306" # Mappato sulla 3307 sul PC host per evitare conflitti
     volumes:
