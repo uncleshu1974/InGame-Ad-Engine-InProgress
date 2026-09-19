@@ -10,7 +10,7 @@ import javax.crypto.SecretKey;
 import java.util.Date;
 
 /**
- * Componente per la generazione e validazione dei Token JWT.
+ * Utility component for generating and validating JWT Tokens.
  */
 @Component
 public class JwtUtils {
@@ -19,14 +19,14 @@ public class JwtUtils {
     private String jwtSecret;
 
     @Value("${jwt.expirationMs:86400000}")
-    private int jwtExpirationMs; // 24 ore
+    private int jwtExpirationMs; // 24 hours
 
     private SecretKey key() {
         return Keys.hmacShaKeyFor(jwtSecret.getBytes());
     }
 
     /**
-     * Genera un token JWT basato sull'email dell'inserzionista autenticato.
+     * Generates a JWT token based on the authenticated advertiser's email.
      */
     public String generateJwtToken(Authentication authentication) {
         String email = authentication.getName(); 
@@ -39,7 +39,7 @@ public class JwtUtils {
     }
 
     /**
-     * Estrae l'email (Subject) dal JWT.
+     * Extracts the email (Subject) from the JWT.
      */
     public String getUserEmailFromJwtToken(String token) {
         return Jwts.parser().verifyWith(key()).build()
@@ -47,14 +47,14 @@ public class JwtUtils {
     }
 
     /**
-     * Valida la firma e la scadenza del JWT.
+     * Validates the signature and expiration date of the JWT.
      */
     public boolean validateJwtToken(String authToken) {
         try {
             Jwts.parser().verifyWith(key()).build().parseSignedClaims(authToken);
             return true;
         } catch (JwtException | IllegalArgumentException e) {
-            System.err.println("Token JWT Non Valido: " + e.getMessage());
+            System.err.println("Invalid JWT Token: " + e.getMessage());
         }
         return false;
     }

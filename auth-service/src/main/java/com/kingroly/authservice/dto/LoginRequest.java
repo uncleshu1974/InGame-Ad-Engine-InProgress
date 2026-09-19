@@ -4,12 +4,19 @@ import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 
+/**
+ * Data Transfer Object (DTO) for login requests.
+ * 
+ * Used to capture the credentials sent by the client. Validation annotations like @NotBlank 
+ * and @Email ensure that the controller only processes valid formats, offloading validation logic 
+ * from the service layer.
+ */
 @Data
 public class LoginRequest {
-    @NotBlank(message = "L'email è obbligatoria")
-    @Email(message = "Formato email non valido")
+    @NotBlank(message = "Email is required")
+    @Email(message = "Invalid email format")
     private String email;
 
-    @NotBlank(message = "La password è obbligatoria")
+    @NotBlank(message = "Password is required")
     private String password;
 }

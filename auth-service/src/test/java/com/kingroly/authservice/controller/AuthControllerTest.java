@@ -45,18 +45,18 @@ class AuthControllerTest {
 
     @Test
     void testRegisterUserAndLogin() throws Exception {
-        // 1. Registra un nuovo utente
+        // 1. Register a new user
         SignupRequest signup = new SignupRequest();
         signup.setEmail("integration@test.com");
         signup.setPassword("Password123!");
-        signup.setCompanyName("Integration Test Corp");
+        signup.setAdvertiserName("Integration Test Corp");
 
         mockMvc.perform(post("/api/auth/register")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(signup)))
                 .andExpect(status().isOk());
 
-        // 2. Tenta di fare il login con le credenziali appena create
+        // 2. Try logging in with the newly created credentials
         LoginRequest login = new LoginRequest();
         login.setEmail("integration@test.com");
         login.setPassword("Password123!");
@@ -64,7 +64,7 @@ class AuthControllerTest {
         mockMvc.perform(post("/api/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(login)))
-                .andExpect(status().isOk()); // Deve restituire 200 OK e il tempToken
+                .andExpect(status().isOk()); // Must return 200 OK and the tempToken
     }
 
     @Test

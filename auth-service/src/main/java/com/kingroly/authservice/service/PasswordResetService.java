@@ -12,10 +12,17 @@ import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
 
+/**
+ * Service handling the business logic for Password Resets.
+ * 
+ * DESIGN PATTERN: Service Layer.
+ * This class coordinates between the Advertisers and PasswordResetTokens repositories
+ * to generate secure, time-limited reset tokens (UUIDs) and validate them later.
+ */
 @Service
 public class PasswordResetService {
 
-    private final Long resetTokenDurationMs = 900000L; // 15 minuti
+    private final Long resetTokenDurationMs = 900000L; // 15 minutes
 
     @Autowired
     private PasswordResetTokensRepository passwordResetTokensRepository;
@@ -23,6 +30,10 @@ public class PasswordResetService {
     @Autowired
     private AdvertisersRepository advertisersRepository;
 
+    /**
+     * Creates a new unique reset token for a given advertiser ID.
+     * The token is set to expire 15 minutes from creation.
+     */
     public PasswordResetTokens createResetToken(Long advertiserId) {
         PasswordResetTokens token = new PasswordResetTokens();
 
@@ -37,6 +48,10 @@ public class PasswordResetService {
         return token;
     }
 
+    /**
+     * Verifies if a given token has expired based on its 'expiresAt' timestamp.
+     * If expired, it automatically deletes the token from the DB and throws an Exception.
+     */
     public PasswordResetTokens verifyExpiration(PasswordResetTokens token) {
         if (token.getExpiresAt().before(Timestamp.from(Instant.now()))) {
             passwordResetTokensRepository.delete(token);

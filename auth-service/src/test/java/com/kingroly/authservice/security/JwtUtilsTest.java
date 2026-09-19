@@ -16,9 +16,9 @@ class JwtUtilsTest {
     @BeforeEach
     void setUp() {
         jwtUtils = new JwtUtils();
-        // Inietta i valori simulati per il secret e la scadenza
-        ReflectionTestUtils.setField(jwtUtils, "jwtSecret", "ThisIsAVerySecureAndLongSecretKeyForTestingPurposesOnly1234567890!");
-        ReflectionTestUtils.setField(jwtUtils, "jwtExpirationMs", 3600000); // 1 ora
+        // Inject mocked values for secret and expiration
+        ReflectionTestUtils.setField(jwtUtils, "jwtSecret", "TestSecretKeyThatMustBeVeryLongAndSecure12345!");
+        ReflectionTestUtils.setField(jwtUtils, "jwtExpirationMs", 3600000); // 1 hour
     }
 
     @Test
@@ -75,13 +75,13 @@ class JwtUtilsTest {
     @Test
     void testValidateJwtToken_ExpiredToken() {
         // Arrange
-        // Settiamo un'espirazione nel passato (es. 1 ms)
+        // Set an expiration in the past (e.g., 1 ms)
         ReflectionTestUtils.setField(jwtUtils, "jwtExpirationMs", 1);
         Authentication authentication = Mockito.mock(Authentication.class);
         Mockito.when(authentication.getName()).thenReturn("test@advertiser.com");
         String token = jwtUtils.generateJwtToken(authentication);
 
-        // Aspettiamo che il token scada
+        // Wait for the token to expire
         try {
             Thread.sleep(10);
         } catch (InterruptedException e) {

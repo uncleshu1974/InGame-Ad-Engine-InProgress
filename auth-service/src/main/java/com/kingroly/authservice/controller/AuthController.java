@@ -28,7 +28,20 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
 
+/**
+ * Main REST Controller handling Authentication and Authorization.
+ * 
+ * DESIGN PATTERN: MVC (Model-View-Controller) -> Controller Layer.
+ * This class exposes HTTP endpoints (/api/auth/*) to the outside world.
+ * 
+ * @RestController indicates that the data returned by each method will be written 
+ * straight into the response body instead of rendering a template.
+ * @CrossOrigin enables Cross-Origin Resource Sharing (CORS), allowing web frontends 
+ * from different domains to communicate with these APIs.
+ */
 @CrossOrigin(origins = "*", maxAge = 3600)
 @RestController
 @RequestMapping("/api/auth")
@@ -69,15 +82,15 @@ public class AuthController {
         @ApiResponse(responseCode = "429", description = "Too many requests (Rate Limit exceeded)")
     })
     @PostMapping("/login")
-    public ResponseEntity<?> authenticateUser(@Valid @RequestBody LoginRequest loginRequest) {
-        // Verifica credenziali tramite Spring Security
+    public ResponseEntity<String> authenticateUser(@Valid @RequestBody LoginRequest loginRequest) {
+        // Verify credentials using Spring Security's AuthenticationManager
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(loginRequest.getEmail(), loginRequest.getPassword()));
 
         UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
         Advertisers advertiser = advertisersRepository.findById(userDetails.getId()).orElseThrow();
 
-        // Generazione OTP a 6 cifre
+        // Generate a 6-digit OTP code for 2FA validation
         String code = String.format("%06d", new java.util.Random().nextInt(999999));
         String tempToken = UUID.randomUUID().toString();
 
@@ -89,24 +102,25 @@ public class AuthController {
         otp.setIsUsed(false);
         otpCodesRepository.save(otp);
 
-        // Invia l'email (Mock)
+        // Send the OTP via email (Mock implementation)
         emailService.sendOtpEmail(advertiser.getEmail(), code);
 
-        return ResponseEntity.ok("Richiesta 2FA inviata. Usa il tempToken: " + tempToken + " per verificare l'accesso.");
+        return ResponseEntity.ok("2FA request sent. Use the tempToken: " + tempToken + " to verify access.");
     }
 
     @Operation(summary = "Verify 2FA OTP code", description = "Verifies the OTP and tempToken. On success, returns a JWT (Access Token) and a long-lived Refresh Token.")
+    @ApiResponse(responseCode = "200", description = "Successful Verification", content = @Content(schema = @Schema(implementation = JwtResponse.class)))
     @PostMapping("/verify-2fa")
     public ResponseEntity<?> verify2fa(@Valid @RequestBody Verify2FaRequest request) {
         Optional<OtpCodes> otpOpt = otpCodesRepository.findByTempTokenAndCode(request.getTempToken(), request.getCode());
 
         if (otpOpt.isEmpty()) {
-            return ResponseEntity.badRequest().body("Codice OTP o Token Temporaneo non valido!");
+            return ResponseEntity.badRequest().body("Invalid OTP Code or Temporary Token!");
         }
 
         OtpCodes otp = otpOpt.get();
         if (otp.getIsUsed() || otp.getExpiresAt().before(Timestamp.valueOf(LocalDateTime.now()))) {
-            return ResponseEntity.badRequest().body("Codice OTP scaduto o già utilizzato!");
+            return ResponseEntity.badRequest().body("OTP Code expired or already used!");
         }
 
         otp.setIsUsed(true);
@@ -115,49 +129,55 @@ public class AuthController {
         Advertisers advertiser = otp.getAdvertisers();
         UserDetailsImpl userDetails = UserDetailsImpl.build(advertiser);
 
-        // Creiamo il contesto di sicurezza fittizio per generare il token
+        // Create a fake security context to generate the JWT without requiring full standard login
         UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
                 userDetails, null, userDetails.getAuthorities());
         SecurityContextHolder.getContext().setAuthentication(authentication);
 
         String jwt = jwtUtils.generateJwtToken(authentication);
 
-        // Crea la sessione del dispositivo
+        // Create the device session to track logged in devices
         DeviceSessions session = new DeviceSessions();
         session.setAdvertisers(advertiser);
-        session.setTokenId(jwt); // Usiamo l'intero JWT come ID univoco (o il subject/jti)
+        session.setTokenId(jwt); // Use the entire JWT as a unique ID (or subject/jti)
         session.setDeviceInfo(request.getDeviceInfo());
-        session.setIpAddress("127.0.0.1"); // In un'app reale si prende dalla request HTTP
+        session.setIpAddress("127.0.0.1"); // In a real app, this should be extracted from the HTTP request
         session.setIsRevoked(false);
         deviceSessionsRepository.save(session);
 
-        // Crea il Refresh Token
+        // Create the long-lived Refresh Token
         RefreshTokens refreshToken = refreshTokenService.createRefreshToken(advertiser.getId());
 
-        return ResponseEntity.ok(new TokenRefreshResponse(jwt, refreshToken.getToken()));
+        return ResponseEntity.ok(new JwtResponse(
+                jwt, 
+                refreshToken.getToken(), 
+                advertiser.getId(), 
+                advertiser.getAdvertiserName(), 
+                advertiser.getEmail()
+        ));
     }
 
     @Operation(summary = "Register a new Advertiser", description = "Creates a new advertiser account in the Auth Service.")
     @PostMapping("/register")
-    public ResponseEntity<?> registerUser(@Valid @RequestBody SignupRequest signUpRequest) {
+    public ResponseEntity<String> registerUser(@Valid @RequestBody SignupRequest signUpRequest) {
         if (advertisersRepository.findByEmail(signUpRequest.getEmail()).isPresent()) {
-            return ResponseEntity.badRequest().body("Errore: L'email è già in uso!");
+            return ResponseEntity.badRequest().body("Error: Email is already in use!");
         }
 
         Advertisers advertiser = new Advertisers();
-        advertiser.setCompanyName(signUpRequest.getCompanyName());
+        advertiser.setAdvertiserName(signUpRequest.getAdvertiserName());
         advertiser.setEmail(signUpRequest.getEmail());
         advertiser.setPassword(encoder.encode(signUpRequest.getPassword()));
         advertiser.setRole("ROLE_ADVERTISER");
 
         advertisersRepository.save(advertiser);
 
-        return ResponseEntity.ok("Inserzionista registrato con successo!");
+        return ResponseEntity.ok("Advertiser registered successfully!");
     }
 
     @Operation(summary = "Get active sessions", description = "Returns a list of all devices/sessions currently connected to the account. Requires Access Token (JWT).")
     @GetMapping("/sessions")
-    public ResponseEntity<?> getActiveSessions(Authentication authentication) {
+    public ResponseEntity<List<DeviceSessions>> getActiveSessions(Authentication authentication) {
         String email = authentication.getName();
         Advertisers advertiser = advertisersRepository.findByEmail(email).orElseThrow();
 
@@ -167,20 +187,20 @@ public class AuthController {
 
     @Operation(summary = "Revoke an active session", description = "Manually invalidates a specific session, disconnecting the device. Requires Access Token (JWT).")
     @PostMapping("/sessions/{id}/revoke")
-    public ResponseEntity<?> revokeSession(@PathVariable Long id, Authentication authentication) {
+    public ResponseEntity<String> revokeSession(@PathVariable Long id, Authentication authentication) {
         String email = authentication.getName();
         Advertisers advertiser = advertisersRepository.findByEmail(email).orElseThrow();
 
         DeviceSessions session = deviceSessionsRepository.findById(id).orElseThrow();
         
-        // Verifica che la sessione appartenga all'utente loggato
+        // Verify that the session belongs to the currently logged-in user
         if (session.getAdvertisers().getId() != advertiser.getId()) {
-            return ResponseEntity.status(403).body("Azione non consentita");
+            return ResponseEntity.status(403).body("Action not allowed");
         }
 
         session.setIsRevoked(true);
         deviceSessionsRepository.save(session);
-        return ResponseEntity.ok("Sessione revocata con successo!");
+        return ResponseEntity.ok("Session revoked successfully!");
     }
 
     @Operation(summary = "Validate JWT token", description = "Utility endpoint to quickly test if the current token (in headers) is still valid.")
@@ -190,6 +210,7 @@ public class AuthController {
     }
 
     @Operation(summary = "Renew JWT Access Token", description = "Receives a valid Refresh Token and returns a new Access Token.")
+    @ApiResponse(responseCode = "200", description = "Token refreshed successfully", content = @Content(schema = @Schema(implementation = TokenRefreshResponse.class)))
     @PostMapping("/refreshtoken")
     public ResponseEntity<?> refreshtoken(@Valid @RequestBody TokenRefreshRequest request) {
         String requestRefreshToken = request.getRefreshToken();
@@ -202,6 +223,15 @@ public class AuthController {
                     UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
                             userDetails, null, userDetails.getAuthorities());
                     String token = jwtUtils.generateJwtToken(authentication);
+                    
+                    DeviceSessions session = new DeviceSessions();
+                    session.setAdvertisers(advertiser);
+                    session.setTokenId(token);
+                    session.setDeviceInfo("Refreshed Session");
+                    session.setIpAddress("127.0.0.1");
+                    session.setIsRevoked(false);
+                    deviceSessionsRepository.save(session);
+                    
                     return ResponseEntity.ok(new TokenRefreshResponse(token, requestRefreshToken));
                 })
                 .orElseThrow(() -> new RuntimeException("Refresh token is not in database!"));
@@ -209,25 +239,25 @@ public class AuthController {
 
     @Operation(summary = "Request password recovery", description = "Generates a temporary token for password reset and sends it to the specified email.")
     @PostMapping("/forgot-password")
-    public ResponseEntity<?> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
+    public ResponseEntity<String> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
         Optional<Advertisers> advertiserOpt = advertisersRepository.findByEmail(request.getEmail());
         if (advertiserOpt.isEmpty()) {
-            return ResponseEntity.badRequest().body("Errore: Utente non trovato.");
+            return ResponseEntity.badRequest().body("Error: User not found.");
         }
 
         PasswordResetTokens resetToken = passwordResetService.createResetToken(advertiserOpt.get().getId());
         emailService.sendPasswordResetEmail(advertiserOpt.get().getEmail(), resetToken.getToken());
 
-        return ResponseEntity.ok("Ti abbiamo inviato un'email con il token per reimpostare la password.");
+        return ResponseEntity.ok("We have sent you an email with the token to reset your password.");
     }
 
     @Operation(summary = "Set a new password", description = "Allows setting a new password for the account by providing the token received via email.")
     @PostMapping("/reset-password")
-    public ResponseEntity<?> resetPassword(@Valid @RequestBody PasswordResetRequest request) {
+    public ResponseEntity<String> resetPassword(@Valid @RequestBody PasswordResetRequest request) {
         Optional<PasswordResetTokens> tokenOpt = passwordResetService.findByToken(request.getToken());
 
         if (tokenOpt.isEmpty()) {
-            return ResponseEntity.badRequest().body("Errore: Token invalido.");
+            return ResponseEntity.badRequest().body("Error: Invalid token.");
         }
 
         try {
@@ -238,7 +268,7 @@ public class AuthController {
             
             passwordResetService.deleteToken(validToken);
 
-            return ResponseEntity.ok("Password reimpostata con successo! Ora puoi effettuare il login.");
+            return ResponseEntity.ok("Password reset successfully! You can now log in.");
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
@@ -246,6 +276,6 @@ public class AuthController {
 
     @ExceptionHandler(org.springframework.security.authentication.BadCredentialsException.class)
     public ResponseEntity<String> handleBadCredentials(org.springframework.security.authentication.BadCredentialsException ex) {
-        return ResponseEntity.status(401).body("Credenziali non valide!");
+        return ResponseEntity.status(401).body("Invalid credentials!");
     }
 }

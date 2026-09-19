@@ -1,39 +1,27 @@
-# 🎮 In-Game Ad Engine (In Progress)
+# 🎮 In-Game Ad Engine (Development Repository)
 
-![Java CI with Maven](https://github.com/uncleshu1974/java-spring-boot-learning/actions/workflows/maven.yml/badge.svg)
+> **⚠️ PRIVATE REPOSITORY:** This is the main development workshop for the In-Game Ad Engine project. Code here is constantly evolving and may contain work-in-progress features.
 
-Welcome to the **In-Game Ad Engine** public showcase! 
-This repository contains the production-ready modules of a larger, ongoing project designed to deliver dynamic, targeted advertisements directly inside video games.
+## 🌟 Project Vision
+The **In-Game Ad Engine** is a robust, microservice-based architecture designed to seamlessly serve, track, and manage dynamic advertisements within video games. It acts as a bridge between game developers and advertisers, providing a highly scalable backend to manage campaigns, budgets, and real-time ad delivery.
 
-## 🎯 What this project will do (End Goal)
-When fully completed, the In-Game Ad Engine will allow game developers to integrate a lightweight SDK into their games, automatically requesting and displaying ads (banners, videos, billboards) without disrupting gameplay. Advertisers will use a dedicated portal to upload creatives, set budgets, and target specific gaming demographics.
+## 🏗️ Architecture
+The project is built on **Java Spring Boot 3** and utilizes a Polyrepo/Monorepo structure orchestrated via Docker Compose.
 
-The system relies on a **microservice architecture** built with Spring Boot, ensuring high availability and independent scaling.
+### Microservices:
+1. **Auth Service (`auth-service`)**: Handles the onboarding and authentication of Advertisers. It features Enterprise-grade security including JWT, long-lived Refresh Tokens, 2FA via real SMTP, Rate Limiting (Bucket4j), and Session Revocation.
+2. **Ad Campaign Service (`ad-campaign-service`)**: (Work in Progress) Will handle the core business logic—managing advertiser budgets, ad creatives, campaign targeting, and serving the actual ads to the game clients via high-performance APIs.
 
-## ✅ What is currently Working & Tested
-Currently, this repository showcases the completed **Authentication Service (`auth-service`)**, which acts as the secure gateway for advertisers.
+## 🚀 Getting Started (Development)
+1. Copy `.env.example` to `.env` and fill in your database and SMTP credentials.
+2. Run `docker-compose up -d` to start the MySQL database container.
+3. Start the individual microservices via your IDE or Maven (`./mvnw spring-boot:run`).
 
-### 🛡️ Auth Service Features (Production-Ready)
-- **Advanced JWT Authentication**: Secure, stateless session management.
-- **Refresh Token Rotation**: Long-lived refresh tokens stored in the database with strict expiration logic to maintain UX without compromising security.
-- **2FA & Password Recovery (Real SMTP)**: Full integration with JavaMailSender to send real OTP codes and temporary reset tokens via email.
-- **Rate Limiting**: Brute-force protection on authentication endpoints powered by `Bucket4j`.
-- **Session Management**: Ability to view and manually revoke active sessions/devices connected to an advertiser's account.
-- **Interactive Documentation**: Fully documented APIs via Swagger UI/OpenAPI 3.
-
-## 🚀 How to Run the Auth Service
-1. Clone this repository.
-2. Rename `.env.example` to `.env` and fill in your MySQL and SMTP credentials.
-3. Run `docker-compose up -d` to spin up the database.
-4. Launch the application (e.g., via Maven: `./mvnw spring-boot:run` inside the `auth-service` folder).
-5. Visit `http://localhost:8084/swagger-ui/index.html` to interact with the APIs.
-5. Visit `http://localhost:8084/swagger-ui/index.html` to interact with the APIs.
-
-## 🧠 Design Decisions & Trade-offs
-To build a scalable and testable system, several architectural decisions were made:
-- **CORS Wildcard (`*`) in AuthController**: Currently set to wildcard for local development and testing across various frontend clients. In a production environment, this will be restricted to the specific domains of the Advertiser Portal and the Ad-Serving SDK via Spring Security config.
-- **Refresh Token Rotation**: Instead of extending the life of a standard JWT, the system uses a strict rotation mechanism for Refresh Tokens stored in the database. This allows for manual revocation of compromised sessions.
-- **Testing with H2 in-memory Database**: To ensure fast and reliable integration tests that don't depend on complex local Docker networks (especially within VS Code Dev Containers), the system uses an H2 in-memory database configured for MySQL compatibility. This guarantees that tests can be executed seamlessly in any local environment or CI/CD pipeline.
-- **Repository Sync Rule**: This public repository (`InGame-Ad-Engine-InProgress`) contains ONLY code that is 100% completed, tested, and validated. Active development happens in a private repository, and features are promoted here only when fully stabilized.
-## 🚧 What's Next?
-The next module in development is the **Ad Campaign Service**, which will handle the core business logic (budgets, creatives, and ad-serving algorithms). Stay tuned for updates!
+## 🗺️ Roadmap
+- [x] Database schema design and entity generation.
+- [x] Auth Service: Basic JWT authentication.
+- [x] Auth Service: SMTP email integration and 2FA.
+- [x] Auth Service: Rate Limiting and Session management.
+- [ ] Ad Campaign Service: Campaign CRUD operations.
+- [ ] Ad Campaign Service: Ad Delivery API for game clients.
+- [ ] Analytics & Tracking implementation.

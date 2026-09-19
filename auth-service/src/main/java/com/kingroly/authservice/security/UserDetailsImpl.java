@@ -7,27 +7,39 @@ import org.springframework.security.core.userdetails.UserDetails;
 import java.util.Collection;
 import java.util.Collections;
 
+/**
+ * Custom implementation of Spring Security's UserDetails interface.
+ * 
+ * DESIGN PATTERN: Adapter Pattern.
+ * Spring Security doesn't know about our custom 'Advertisers' entity. 
+ * This class adapts our Advertisers entity into a standard UserDetails object 
+ * that Spring Security's AuthenticationManager can understand and use.
+ */
 public class UserDetailsImpl implements UserDetails {
     private Long id;
     private String email;
     private String password;
-    private String companyName;
+    private String advertiserName;
     private Collection<? extends GrantedAuthority> authorities;
 
-    public UserDetailsImpl(Long id, String email, String password, String companyName, Collection<? extends GrantedAuthority> authorities) {
+    public UserDetailsImpl(Long id, String email, String password, String advertiserName, Collection<? extends GrantedAuthority> authorities) {
         this.id = id;
         this.email = email;
         this.password = password;
-        this.companyName = companyName;
+        this.advertiserName = advertiserName;
         this.authorities = authorities;
     }
 
+    /**
+     * Factory method to build a UserDetailsImpl object directly from an Advertisers entity.
+     * It maps the entity's fields (like email and role) to the standard Spring Security fields.
+     */
     public static UserDetailsImpl build(Advertisers advertiser) {
         return new UserDetailsImpl(
                 advertiser.getId(),
                 advertiser.getEmail(),
                 advertiser.getPassword(),
-                advertiser.getCompanyName(),
+                advertiser.getAdvertiserName(),
                 Collections.singletonList(new SimpleGrantedAuthority(advertiser.getRole() != null ? advertiser.getRole() : "ROLE_ADVERTISER"))
         );
     }
@@ -42,7 +54,7 @@ public class UserDetailsImpl implements UserDetails {
     public String getUsername() { return email; } 
 
     public Long getId() { return id; }
-    public String getCompanyName() { return companyName; }
+    public String getAdvertiserName() { return advertiserName; }
 
     @Override
     public boolean isAccountNonExpired() { return true; }
